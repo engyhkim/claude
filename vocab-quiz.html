@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>영어 단어 퀴즈</title>
+<style>
+  :root {
+    --bg: #f6f5f1;
+    --card: #ffffff;
+    --text: #1f2328;
+    --muted: #6b7078;
+    --line: #e3e1da;
+    --accent: #2f6fdb;
+    --accent-soft: #e6eefc;
+    --good: #1f8a4c;
+    --good-soft: #e3f4ea;
+    --bad: #c93a3a;
+    --bad-soft: #fbe7e7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15171a;
+      --card: #1e2125;
+      --text: #e8e9eb;
+      --muted: #9aa0a8;
+      --line: #30343a;
+      --accent: #6d9cf0;
+      --accent-soft: #22304a;
+      --good: #4cc17f;
+      --good-soft: #1d3527;
+      --bad: #ef7070;
+      --bad-soft: #3d2224;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15171a;
+    --card: #1e2125;
+    --text: #e8e9eb;
+    --muted: #9aa0a8;
+    --line: #30343a;
+    --accent: #6d9cf0;
+    --accent-soft: #22304a;
+    --good: #4cc17f;
+    --good-soft: #1d3527;
+    --bad: #ef7070;
+    --bad-soft: #3d2224;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    line-height: 1.5;
+  }
+  main { max-width: 560px; margin: 0 auto; padding: 32px 16px 48px; }
+  h1 { font-size: 1.5rem; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 24px;
+  }
+  .hidden { display: none !important; }
+  label.group-title { display: block; font-weight: 600; margin: 0 0 8px; }
+  .options { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+  .chip input { position: absolute; opacity: 0; pointer-events: none; }
+  .chip span {
+    display: inline-block;
+    padding: 8px 14px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .chip input:checked + span { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .chip input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button {
+    font: inherit;
+    cursor: pointer;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--text);
+    padding: 12px 16px;
+  }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; width: 100%; }
+  button:disabled { cursor: default; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; color: var(--muted); font-size: .9rem; }
+  .progress { height: 6px; background: var(--line); border-radius: 999px; overflow: hidden; margin-bottom: 24px; }
+  .progress > div { height: 100%; width: 0; background: var(--accent); transition: width .25s; }
+  .prompt-label { color: var(--muted); font-size: .9rem; margin: 0 0 4px; }
+  .prompt { font-size: 2rem; font-weight: 700; margin: 0 0 4px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; word-break: break-word; }
+  .speak { padding: 4px 10px; font-size: .9rem; }
+  .choices { display: grid; gap: 10px; margin-top: 20px; }
+  .choice { text-align: left; width: 100%; }
+  .choice:not(:disabled):hover { border-color: var(--accent); }
+  .choice.correct { background: var(--good-soft); border-color: var(--good); color: var(--good); font-weight: 600; }
+  .choice.wrong { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); }
+  .choice kbd { color: var(--muted); font-family: inherit; margin-right: 8px; }
+  .type-row { display: flex; gap: 8px; margin-top: 20px; }
+  .type-row input {
+    flex: 1; min-width: 0; font: inherit; padding: 12px; border-radius: 10px;
+    border: 1px solid var(--line); background: var(--bg); color: var(--text);
+  }
+  .feedback { margin-top: 16px; padding: 12px 14px; border-radius: 10px; }
+  .feedback.good { background: var(--good-soft); color: var(--good); }
+  .feedback.bad { background: var(--bad-soft); color: var(--bad); }
+  .example { color: var(--muted); font-size: .9rem; margin-top: 6px; font-style: italic; }
+  #nextBtn { margin-top: 16px; }
+  .score-big { font-size: 3rem; font-weight: 800; margin: 8px 0; }
+  .review { list-style: none; padding: 0; margin: 16px 0; }
+  .review li { border-top: 1px solid var(--line); padding: 10px 0; display: flex; justify-content: space-between; gap: 12px; }
+  .review li b { word-break: break-word; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .row button { flex: 1; }
+  .hint { color: var(--muted); font-size: .8rem; margin-top: 16px; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <h1>영어 단어 퀴즈</h1>
+  <p class="sub">단어를 보고 뜻을 맞혀 보세요.</p>
+
+  <!-- 설정 화면 -->
+  <section id="setup" class="card">
+    <label class="group-title">문제 유형</label>
+    <div class="options">
+      <label class="chip"><input type="radio" name="dir" value="en2ko" checked><span>영어 → 뜻</span></label>
+      <label class="chip"><input type="radio" name="dir" value="ko2en"><span>뜻 → 영어</span></label>
+      <label class="chip"><input type="radio" name="dir" value="mix"><span>섞어서</span></label>
+    </div>
+
+    <label class="group-title">답하는 방식</label>
+    <div class="options">
+      <label class="chip"><input type="radio" name="mode" value="choice" checked><span>4지선다</span></label>
+      <label class="chip"><input type="radio" name="mode" value="type"><span>직접 입력</span></label>
+    </div>
+
+    <label class="group-title">난이도</label>
+    <div class="options">
+      <label class="chip"><input type="radio" name="level" value="1" checked><span>기초</span></label>
+      <label class="chip"><input type="radio" name="level" value="2"><span>중급</span></label>
+      <label class="chip"><input type="radio" name="level" value="3"><span>고급</span></label>
+      <label class="chip"><input type="radio" name="level" value="all"><span>전체</span></label>
+    </div>
+
+    <label class="group-title">문제 수</label>
+    <div class="options">
+      <label class="chip"><input type="radio" name="count" value="10" checked><span>10</span></label>
+      <label class="chip"><input type="radio" name="count" value="20"><span>20</span></label>
+      <label class="chip"><input type="radio" name="count" value="0"><span>전부</span></label>
+    </div>
+
+    <button id="startBtn" class="primary">시작하기</button>
+  </section>
+
+  <!-- 퀴즈 화면 -->
+  <section id="quiz" class="card hidden">
+    <div class="topbar">
+      <span id="counter">1 / 10</span>
+      <span id="scoreLive">점수 0 · 연속 0</span>
+    </div>
+    <div class="progress"><div id="bar"></div></div>
+
+    <p class="prompt-label" id="promptLabel">이 단어의 뜻은?</p>
+    <div class="prompt">
+      <span id="prompt"></span>
+      <button class="speak" id="speakBtn" title="발음 듣기" aria-label="발음 듣기">🔊</button>
+    </div>
+
+    <div id="choices" class="choices"></div>
+
+    <form id="typeForm" class="type-row hidden" autocomplete="off">
+      <input id="typeInput" type="text" placeholder="정답 입력 후 Enter" aria-label="정답 입력">
+      <button type="submit">확인</button>
+    </form>
+
+    <div id="feedback" class="feedback hidden"></div>
+    <button id="nextBtn" class="primary hidden">다음 ›</button>
+    <p class="hint" id="hint">키보드 1–4로 선택, Enter로 다음 문제</p>
+  </section>
+
+  <!-- 결과 화면 -->
+  <section id="result" class="card hidden">
+    <p class="prompt-label">결과</p>
+    <div class="score-big" id="finalScore"></div>
+    <p id="finalMsg"></p>
+    <div id="reviewWrap">
+      <p class="group-title">틀린 단어</p>
+      <ul class="review" id="reviewList"></ul>
+    </div>
+    <div class="row">
+      <button id="retryWrongBtn">틀린 것만 다시</button>
+      <button id="restartBtn" class="primary">처음으로</button>
+    </div>
+  </section>
+</main>
+
+<script>
+// ----- 단어장 (단어를 추가하려면 이 목록에 항목을 넣으세요) -----
+// level: 1 기초, 2 중급, 3 고급
+const WORDS = [
+  { en: "apple", ko: "사과", level: 1, ex: "She eats an apple every morning." },
+  { en: "borrow", ko: "빌리다", level: 1, ex: "Can I borrow your pen?" },
+  { en: "careful", ko: "조심하는", level: 1, ex: "Be careful on the stairs." },
+  { en: "decide", ko: "결정하다", level: 1, ex: "I can't decide what to wear." },
+  { en: "early", ko: "일찍", level: 1, ex: "He wakes up early." },
+  { en: "forget", ko: "잊다", level: 1, ex: "Don't forget your keys." },
+  { en: "hungry", ko: "배고픈", level: 1, ex: "I'm so hungry." },
+  { en: "library", ko: "도서관", level: 1, ex: "We studied at the library." },
+  { en: "quiet", ko: "조용한", level: 1, ex: "Please be quiet." },
+  { en: "weather", ko: "날씨", level: 1, ex: "The weather is nice today." },
+  { en: "answer", ko: "대답하다", level: 1, ex: "Please answer the question." },
+  { en: "travel", ko: "여행하다", level: 1, ex: "They love to travel." },
+
+  { en: "achieve", ko: "성취하다", level: 2, ex: "She achieved her goal." },
+  { en: "available", ko: "이용 가능한", level: 2, ex: "Is this seat available?" },
+  { en: "compare", ko: "비교하다", level: 2, ex: "Compare the two prices." },
+  { en: "confident", ko: "자신 있는", level: 2, ex: "He felt confident before the test." },
+  { en: "encourage", ko: "격려하다", level: 2, ex: "My teacher encouraged me." },
+  { en: "environment", ko: "환경", level: 2, ex: "We must protect the environment." },
+  { en: "improve", ko: "개선하다", level: 2, ex: "Practice will improve your English." },
+  { en: "opportunity", ko: "기회", level: 2, ex: "This is a great opportunity." },
+  { en: "prefer", ko: "더 좋아하다", level: 2, ex: "I prefer tea to coffee." },
+  { en: "require", ko: "필요로 하다", level: 2, ex: "This job requires patience." },
+  { en: "suggest", ko: "제안하다", level: 2, ex: "I suggest we leave now." },
+  { en: "various", ko: "다양한", level: 2, ex: "There are various options." },
+
+  { en: "ambiguous", ko: "모호한", level: 3, ex: "His answer was ambiguous." },
+  { en: "benevolent", ko: "자비로운", level: 3, ex: "A benevolent king ruled the land." },
+  { en: "comprehensive", ko: "포괄적인", level: 3, ex: "She gave a comprehensive report." },
+  { en: "diligent", ko: "성실한", level: 3, ex: "He is a diligent student." },
+  { en: "eloquent", ko: "유창한", level: 3, ex: "She gave an eloquent speech." },
+  { en: "inevitable", ko: "피할 수 없는", level: 3, ex: "Change is inevitable." },
+  { en: "meticulous", ko: "꼼꼼한", level: 3, ex: "He is meticulous about details." },
+  { en: "obsolete", ko: "구식의", level: 3, ex: "That technology is now obsolete." },
+  { en: "persevere", ko: "인내하다", level: 3, ex: "You must persevere to succeed." },
+  { en: "reluctant", ko: "마지못해 하는", level: 3, ex: "She was reluctant to leave." },
+  { en: "scrutinize", ko: "면밀히 조사하다", level: 3, ex: "They scrutinized the contract." },
+  { en: "ubiquitous", ko: "어디에나 있는", level: 3, ex: "Smartphones are ubiquitous." },
+];
+
+// ----- 상태 -----
+const $ = (id) => document.getElementById(id);
+let questions = [];
+let idx = 0;
+let score = 0;
+let streak = 0;
+let bestStreak = 0;
+let wrong = [];
+let answered = false;
+let settings = {};
+
+const shuffle = (arr) => {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+const pick = (name) => document.querySelector(`input[name="${name}"]:checked`).value;
+const normalize = (s) => s.trim().toLowerCase().replace(/\s+/g, " ");
+
+function show(section) {
+  ["setup", "quiz", "result"].forEach((id) => $(id).classList.toggle("hidden", id !== section));
+}
+
+function speak(text) {
+  if (!("speechSynthesis" in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "en-US";
+  u.rate = 0.9;
+  speechSynthesis.speak(u);
+}
+
+// ----- 시작 -----
+function startQuiz(pool) {
+  settings = { dir: pick("dir"), mode: pick("mode") };
+  const count = Number(pick("count"));
+  let list = shuffle(pool);
+  if (count > 0) list = list.slice(0, count);
+
+  questions = list.map((w) => ({
+    word: w,
+    dir: settings.dir === "mix" ? (Math.random() < 0.5 ? "en2ko" : "ko2en") : settings.dir,
+  }));
+  idx = 0; score = 0; streak = 0; bestStreak = 0; wrong = [];
+  show("quiz");
+  renderQuestion();
+}
+
+$("startBtn").addEventListener("click", () => {
+  const level = pick("level");
+  const pool = level === "all" ? WORDS : WORDS.filter((w) => String(w.level) === level);
+  startQuiz(pool);
+});
+
+// ----- 문제 표시 -----
+function renderQuestion() {
+  const q = questions[idx];
+  answered = false;
+  const isEn = q.dir === "en2ko";
+
+  $("counter").textContent = `${idx + 1} / ${questions.length}`;
+  $("scoreLive").textContent = `점수 ${score} · 연속 ${streak}`;
+  $("bar").style.width = `${(idx / questions.length) * 100}%`;
+  $("promptLabel").textContent = isEn ? "이 단어의 뜻은?" : "이 뜻의 영어 단어는?";
+  $("prompt").textContent = isEn ? q.word.en : q.word.ko;
+  $("speakBtn").classList.toggle("hidden", !isEn);
+  $("feedback").classList.add("hidden");
+  $("nextBtn").classList.add("hidden");
+
+  const choiceMode = settings.mode === "choice";
+  $("choices").classList.toggle("hidden", !choiceMode);
+  $("typeForm").classList.toggle("hidden", choiceMode);
+  $("hint").textContent = choiceMode ? "키보드 1–4로 선택, Enter로 다음 문제" : "Enter로 제출 · 다시 Enter로 다음 문제";
+
+  if (choiceMode) {
+    const key = isEn ? "ko" : "en";
+    const distractors = shuffle(WORDS.filter((w) => w !== q.word)).slice(0, 3);
+    const options = shuffle([q.word, ...distractors]);
+    $("choices").innerHTML = "";
+    options.forEach((w, i) => {
+      const b = document.createElement("button");
+      b.className = "choice";
+      b.innerHTML = `<kbd>${i + 1}</kbd>`;
+      b.append(w[key]);
+      b.dataset.correct = w === q.word ? "1" : "";
+      b.addEventListener("click", () => checkChoice(b));
+      $("choices").appendChild(b);
+    });
+  } else {
+    const input = $("typeInput");
+    input.value = "";
+    input.disabled = false;
+    input.placeholder = isEn ? "뜻을 한국어로 입력" : "영어 단어 입력";
+    input.focus();
+  }
+
+  if (isEn) speak(q.word.en);
+}
+
+// ----- 채점 -----
+function checkChoice(btn) {
+  if (answered) return;
+  const ok = btn.dataset.correct === "1";
+  document.querySelectorAll(".choice").forEach((b) => {
+    b.disabled = true;
+    if (b.dataset.correct === "1") b.classList.add("correct");
+  });
+  if (!ok) btn.classList.add("wrong");
+  finish(ok);
+}
+
+$("typeForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (answered) { next(); return; }
+  const q = questions[idx];
+  const val = normalize($("typeInput").value);
+  if (!val) return;
+  let ok;
+  if (q.dir === "en2ko") {
+    // 한국어 뜻은 공백 무시하고 비교, 일부 포함도 정답 처리
+    const target = q.word.ko.replace(/\s/g, "");
+    const given = val.replace(/\s/g, "");
+    ok = given === target || (given.length >= 2 && target.includes(given));
+  } else {
+    ok = val === q.word.en.toLowerCase();
+  }
+  $("typeInput").disabled = true;
+  finish(ok);
+});
+
+function finish(ok) {
+  answered = true;
+  const q = questions[idx];
+  if (ok) {
+    score++; streak++;
+    bestStreak = Math.max(bestStreak, streak);
+  } else {
+    streak = 0;
+    wrong.push(q.word);
+  }
+  $("scoreLive").textContent = `점수 ${score} · 연속 ${streak}`;
+
+  const fb = $("feedback");
+  fb.className = "feedback " + (ok ? "good" : "bad");
+  fb.innerHTML = "";
+  const head = document.createElement("div");
+  head.textContent = ok
+    ? (streak >= 3 ? `정답! 🔥 ${streak}연속` : "정답!")
+    : `오답 — ${q.word.en} = ${q.word.ko}`;
+  const ex = document.createElement("div");
+  ex.className = "example";
+  ex.textContent = q.word.ex;
+  fb.append(head, ex);
+
+  const nb = $("nextBtn");
+  nb.textContent = idx + 1 < questions.length ? "다음 ›" : "결과 보기";
+  nb.classList.remove("hidden");
+  if (settings.mode === "choice") nb.focus();
+  if (q.dir === "ko2en") speak(q.word.en);
+}
+
+function next() {
+  idx++;
+  if (idx < questions.length) renderQuestion();
+  else showResult();
+}
+$("nextBtn").addEventListener("click", next);
+$("speakBtn").addEventListener("click", () => speak(questions[idx].word.en));
+
+// 키보드 단축키
+document.addEventListener("keydown", (e) => {
+  if ($("quiz").classList.contains("hidden") || settings.mode !== "choice") return;
+  if (!answered && /^[1-4]$/.test(e.key)) {
+    const b = document.querySelectorAll(".choice")[Number(e.key) - 1];
+    if (b) b.click();
+  }
+});
+
+// ----- 결과 -----
+function showResult() {
+  show("result");
+  const total = questions.length;
+  const pct = Math.round((score / total) * 100);
+  $("finalScore").textContent = `${score} / ${total}`;
+  $("finalMsg").textContent =
+    (pct === 100 ? "완벽해요! 🎉" : pct >= 80 ? "아주 잘했어요! 👏" : pct >= 50 ? "좋아요, 조금만 더! 💪" : "틀린 단어를 다시 복습해 봐요 📚") +
+    ` 정답률 ${pct}% · 최고 연속 ${bestStreak}`;
+
+  const list = $("reviewList");
+  list.innerHTML = "";
+  wrong.forEach((w) => {
+    const li = document.createElement("li");
+    const b = document.createElement("b");
+    b.textContent = w.en;
+    const s = document.createElement("span");
+    s.textContent = w.ko;
+    li.append(b, s);
+    list.appendChild(li);
+  });
+  $("reviewWrap").classList.toggle("hidden", wrong.length === 0);
+  $("retryWrongBtn").classList.toggle("hidden", wrong.length === 0);
+}
+
+$("retryWrongBtn").addEventListener("click", () => {
+  document.querySelector('input[name="count"][value="0"]').checked = true;
+  startQuiz(wrong);
+});
+$("restartBtn").addEventListener("click", () => show("setup"));
+</script>
+</body>
+</html>
